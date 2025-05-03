@@ -144,9 +144,10 @@ void A_timerinterrupt(void)
     if (TRACE > 0)
       printf ("---A: resending packet %d\n", (buffer[(windowfirst+i) % WINDOWSIZE]).seqnum);
 
-    tolayer3(A,buffer[(windowfirst+i) % WINDOWSIZE]);
+    tolayer3(A,buffer[windowfirst]);
     packets_resent++;
-    if (i==0) starttimer(A,RTT);
+    if(windowcount > 0)
+      starttimer(A,RTT);
   }
 }
 
@@ -172,6 +173,10 @@ void A_init(void)
 
 static int expectedseqnum; /* the sequence number expected next by the receiver */
 static int B_nextseqnum;   /* the sequence number for the next packets sent by B */
+static struct pkt recivepkt[SEQSPACE];
+static bool recived[SEQSPACE];
+
+
 
 
 /* called from layer 3, when a packet arrives for layer 4 at B*/
@@ -180,44 +185,43 @@ void B_input(struct pkt packet)
   struct pkt sendpkt;
   int i;
 
-  /* if not corrupted and received packet is in order */
-  if  ( (!IsCorrupted(packet))  && (packet.seqnum == expectedseqnum) ) {
+
+  if  (!IsCorrupted(packet)) {
     if (TRACE > 0)
       printf("----B: packet %d is correctly received, send ACK!\n",packet.seqnum);
     packets_received++;
 
-    /* deliver to receiving application */
-    tolayer5(B, packet.payload);
+    if(recived[packet.seqnum] == false){
+      recived[packet.seqnum] == true;
+      for ( i=0; i<20 ; i++ )
+      recivepkt[packet.seqnum].payload[i] = packet.payload[i];
+
+    }
+
+    while (recived[expectedseqnum] == true){
+
+      tolayer5(B, packet.payload);
+      recived[expectedseqnum] = false;
+      expectedseqnum = (expectedseqnum + 1) % SEQSPACE;
+    }
 
     /* send an ACK for the received packet */
     sendpkt.acknum = expectedseqnum;
-
-    /* update state variables */
-    expectedseqnum = (expectedseqnum + 1) % SEQSPACE;
-  }
-  else {
-    /* packet is corrupted or out of order resend last ACK */
-    if (TRACE > 0)
-      printf("----B: packet corrupted or not expected sequence number, resend ACK!\n");
-    if (expectedseqnum == 0)
-      sendpkt.acknum = SEQSPACE - 1;
-    else
-      sendpkt.acknum = expectedseqnum - 1;
-  }
-
-  /* create packet */
-  sendpkt.seqnum = B_nextseqnum;
-  B_nextseqnum = (B_nextseqnum + 1) % 2;
+    sendpkt.seqnum = NOTINUSE;
 
   /* we don't have any data to send.  fill payload with 0's */
-  for ( i=0; i<20 ; i++ )
+    for ( i=0; i<20 ; i++ )
     sendpkt.payload[i] = '0';
 
   /* computer checksum */
-  sendpkt.checksum = ComputeChecksum(sendpkt);
+    sendpkt.checksum = ComputeChecksum(sendpkt);
 
   /* send out packet */
-  tolayer3 (B, sendpkt);
+    tolayer3 (B, sendpkt);
+
+
+  }
+  
 }
 
 /* the following routine will be called once (only) before any other */
