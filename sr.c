@@ -171,7 +171,6 @@ void A_init(void)
 /********* Receiver (B)  variables and procedures ************/
 
 static int expectedseqnum; /* the sequence number expected next by the receiver */
-static int B_nextseqnum;   /* the sequence number for the next packets sent by B */
 static struct pkt recivepkt[SEQSPACE];
 static bool recived[SEQSPACE];
 
@@ -205,7 +204,7 @@ void B_input(struct pkt packet)
     }
 
     /* send an ACK for the received packet */
-    sendpkt.acknum = expectedseqnum;
+    sendpkt.acknum = packet.seqnum;
     sendpkt.seqnum = NOTINUSE;
 
   /* we don't have any data to send.  fill payload with 0's */
@@ -228,7 +227,7 @@ void B_input(struct pkt packet)
 void B_init(void)
 {
   expectedseqnum = 0;
-  B_nextseqnum = 1;
+
 }
 
 /******************************************************************************
