@@ -145,9 +145,9 @@ void A_timerinterrupt(void)
   }
     tolayer3(A,buffer[windowfirst]);
     packets_resent++;
-    if(windowcount > 0)
+    if(windowcount > 0){
       starttimer(A,RTT);
-  
+    }
 }
 
 
