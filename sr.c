@@ -95,8 +95,7 @@ void A_output(struct msg message)
 */
 void A_input(struct pkt packet)
 {
-  int ackcount = 0;
-  int i;
+
 
   /* if received ACK is not corrupted */
   if (!IsCorrupted(packet)) {
@@ -192,7 +191,7 @@ void B_input(struct pkt packet)
     packets_received++;
 
     if(recived[packet.seqnum] == false){
-      recived[packet.seqnum] == true;
+      recived[packet.seqnum] = true;
       for ( i=0; i<20 ; i++ )
       recivepkt[packet.seqnum].payload[i] = packet.payload[i];
 
